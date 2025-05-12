@@ -1,1 +1,1 @@
-# cat_vs_dog_classifier
+# Face Recognition App
