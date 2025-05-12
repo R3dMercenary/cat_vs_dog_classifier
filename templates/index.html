@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconocimiento de Individuos - Universidad</title>
+    <title>Clasificador de Gatos y Perros - Universidad</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -63,10 +63,10 @@
         }
         .logo-header {
             height: 200px;
-            width: auto;
-            max-width: 300px;
-            margin: 0 15px;
-            object-fit: contain;
+            width: auto;   /* Mantiene la proporción */
+            max-width: 300px; /* Ancho máximo para controlar el tamaño */
+            margin: 0 15px; /* Espaciado entre imágenes */
+            object-fit: contain; /* Mantiene la relación de aspecto */
         }
         .seccion-imagen-capturada {
             text-align: center;
@@ -75,21 +75,8 @@
             background-color: #f0f8ff;
             border-radius: 8px;
         }
-        .person-info {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-        }
-        .face-match {
-            font-weight: bold;
-            color: #28a745;
-        }
-        .face-no-match {
-            font-weight: bold;
-            color: #dc3545;
-        }
     </style>
+    
 </head>
 <body>
     <div class="container">
@@ -98,9 +85,10 @@
                 <img src="{{ url_for('static', filename='images/unison.png') }}" 
                      class="logo-header" 
                      alt="Logo Universidad">
+            
             </div>
-            <h1 class="display-4 mt-3">Reconocimiento de Individuos</h1>
-            <p class="lead">Sistema de Identificación Facial</p>
+            <h1 class="display-4 mt-3">Clasificador de Gatos y Perros</h1>
+            <p class="lead">Proyecto de Redes Neuronales</p>
         </div>
 
         <div class="row">
@@ -114,12 +102,9 @@
                         <div class="contenedor-camara">
                             <img id="videoFeed" src="{{ url_for('video_feed') }}" class="img-fluid rounded" alt="Transmisión en Vivo">
                         </div>
-                        <div class="d-grid gap-2 mt-3">
+                        <div class="d-grid gap-2">
                             <button id="botonCapturar" class="btn btn-primary btn-lg">
-                                Capturar y Analizar Rostro
-                            </button>
-                            <button id="botonRegistrar" class="btn btn-success btn-lg mt-2">
-                                Registrar Nueva Persona
+                                Capturar y Analizar Imagen
                             </button>
                         </div>
 
@@ -133,57 +118,38 @@
 
                 <!-- Sección de Resultados -->
                 <div class="row mt-3" id="seccionResultados" style="display: none;">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="card card-resultado">
                             <div class="card-header bg-info text-white">
-                                <h5 class="mb-0">Resultados de Reconocimiento</h5>
+                                <h5 class="mb-0">Predicción Modelo CNN</h5>
                             </div>
                             <div class="card-body">
-                                <div id="personInfo">
-                                    <p><span class="nombre-modelo">Identidad:</span> <span id="personName">-</span></p>
-                                    <p><span class="nombre-modelo">Confianza:</span> <span id="personConfidence">-</span>%</p>
-                                    <div class="barra-confianza bg-light">
-                                        <div id="confidenceBar" class="progress-bar bg-success" style="width: 0%"></div>
-                                    </div>
-                                    <div class="person-info" id="additionalInfo" style="display: none;">
-                                        <p><strong>Información adicional:</strong></p>
-                                        <p id="personDetails">No hay información adicional disponible.</p>
-                                    </div>
+                                <p><span class="nombre-modelo">Predicción:</span> <span id="predModelo1">-</span></p>
+                                <p><span class="nombre-modelo">Confianza:</span> <span id="confModelo1">-</span>%</p>
+                                <div class="barra-confianza bg-light">
+                                    <div id="barraModelo1" class="progress-bar bg-success" style="width: 0%"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Sección de Registro -->
-                <div class="row mt-3" id="seccionRegistro" style="display: none;">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="card card-resultado">
                             <div class="card-header bg-warning text-dark">
-                                <h5 class="mb-0">Registrar Nueva Persona</h5>
+                                <h5 class="mb-0">Predicción Modelo Estándar</h5>
                             </div>
                             <div class="card-body">
-                                <form id="registrationForm">
-                                    <div class="mb-3">
-                                        <label for="nombrePersona" class="form-label">Nombre completo</label>
-                                        <input type="text" class="form-control" id="nombrePersona" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="informacionAdicional" class="form-label">Información adicional</label>
-                                        <textarea class="form-control" id="informacionAdicional" rows="3"></textarea>
-                                    </div>
-                                    <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-success">Guardar Registro</button>
-                                        <button type="button" id="cancelarRegistro" class="btn btn-secondary">Cancelar</button>
-                                    </div>
-                                </form>
+                                <p><span class="nombre-modelo">Predicción:</span> <span id="predModelo2">-</span></p>
+                                <p><span class="nombre-modelo">Confianza:</span> <span id="confModelo2">-</span>%</p>
+                                <div class="barra-confianza bg-light">
+                                    <div id="barraModelo2" class="progress-bar bg-success" style="width: 0%"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Descripción del sistema -->
+            <!-- Descripción de modelos y uso -->
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
@@ -192,28 +158,27 @@
                     <div class="card-body">
                         <h6>Instrucciones de uso</h6>
                         <ol class="mb-4">
-                            <li class="mb-2">Presiona <strong>"Capturar y Analizar Rostro"</strong> para identificar a una persona</li>
-                            <li class="mb-2">El sistema comparará el rostro con la base de datos</li>
-                            <li class="mb-2">Se mostrará la identidad reconocida con su porcentaje de confianza</li>
-                            <li class="mb-2">Para registrar una nueva persona, presiona el botón correspondiente</li>
+                            <li class="mb-2">Presiona el botón <strong>"Capturar y Analizar Imagen"</strong> para tomar una foto</li>
+                            <li class="mb-2">El sistema procesará la imagen con ambos modelos</li>
+                            <li class="mb-2">Se mostrarán los resultados de clasificación junto con la confianza de la predicción</li>
+                            <li class="mb-2">La imagen capturada permanecerá visible debajo</li>
                         </ol>
                         
                         <hr>
                         
-                        <h6 class="mt-4">Sobre el sistema</h6>
+                        <h6 class="mt-4">Sobre los modelos</h6>
                         <div class="mb-3">
-                            <p class="small">Este sistema utiliza reconocimiento facial basado en redes neuronales convolucionales para identificar individuos. El modelo ha sido entrenado para extraer características faciales distintivas y compararlas con una base de datos de rostros conocidos.</p>
-                            <p class="small mt-2">El sistema puede funcionar en tiempo real con una cámara web estándar en condiciones de iluminación adecuada.</p>
+                            <p class="mb-1"><strong>Modelo Convolucional:</strong></p>
+                            <p class="small">Red neuronal convolucional entrenada con imágenes de gatos y perros del dataset de tensorflow "cats_vs_dogs" después de convertirlas en blanco y negro. Se utilizaron principalemente capas convolucionales 2D y maxpooling 2D en las capas entrantes. </p>
+                            <p class="small mt-2">Número total de parametros: 17,088,869</p>
+                        
                         </div>
                         
+                        
                         <div class="mb-3">
-                            <p class="mb-1"><strong>Características técnicas:</strong></p>
-                            <ul class="small">
-                                <li>Detección de rostros </li>
-                                <li>Extracción de características con FaceNet</li>
-                                <li>Base de datos de rostros en tiempo real</li>
-                                <li>Umbral de confianza ajustable (>60% de confianza)</li>
-                            </ul>
+                            <p class="mb-1"><strong>Modelo Denso Regular:</strong></p>
+                            <p class="small">Red neuronal tradicional entrenada con imágenes de gatos y perros del dataset de tensorflow "cats_vs_dogs" después de convertirlas en blanco y negro, con solo una capa densa 270 neuronas. Es un modelo más rápido pero menos preciso que el CNN para clasificación de imágenes.</p>
+                            <p class="small mt-2">Número total de parametros: 2,700,543</p>
                         </div>
                         
                         <div class="text-center mt-3">
@@ -236,7 +201,7 @@
             this.disabled = true;
             this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analizando...';
             
-            fetch('/recognize', {
+            fetch('/capturar', {
                 method: 'POST'
             })
             .then(response => response.json())
@@ -248,39 +213,28 @@
                 
                 // Mostrar sección de resultados
                 document.getElementById('seccionResultados').style.display = 'flex';
-                document.getElementById('seccionRegistro').style.display = 'none';
                 
-                // Mostrar resultados de reconocimiento
-                const personName = document.getElementById('personName');
-                const personConfidence = document.getElementById('personConfidence');
-                const confidenceBar = document.getElementById('confidenceBar');
-                const additionalInfo = document.getElementById('additionalInfo');
-                const personDetails = document.getElementById('personDetails');
+                // Mostrar predicciones
+                document.getElementById('predModelo1').textContent = data.modelo1.prediccion;
+                document.getElementById('confModelo1').textContent = data.modelo1.confianza;
+                document.getElementById('barraModelo1').style.width = data.modelo1.confianza + '%';
                 
-                if (data.recognized) {
-                    personName.textContent = data.name;
-                    personName.className = 'face-match';
-                    personConfidence.textContent = data.confidence;
-                    confidenceBar.style.width = data.confidence + '%';
-                    
-                    // Mostrar información adicional si está disponible
-                    if (data.additional_info) {
-                        additionalInfo.style.display = 'block';
-                        personDetails.textContent = data.additional_info;
-                    } else {
-                        additionalInfo.style.display = 'none';
-                    }
-                } else {
-                    personName.textContent = 'No reconocido';
-                    personName.className = 'face-no-match';
-                    personConfidence.textContent = '0';
-                    confidenceBar.style.width = '0%';
-                    additionalInfo.style.display = 'none';
-                }
+                document.getElementById('predModelo2').textContent = data.modelo2.prediccion;
+                document.getElementById('confModelo2').textContent = data.modelo2.confianza;
+                document.getElementById('barraModelo2').style.width = data.modelo2.confianza + '%';
                 
-                // Mostrar imagen capturada
+                // Colores diferentes según predicción
+                const barraModelo1 = document.getElementById('barraModelo1');
+                const barraModelo2 = document.getElementById('barraModelo2');
+                
+                barraModelo1.className = data.modelo1.prediccion === 'Perro' ? 
+                    'progress-bar bg-primary' : 'progress-bar bg-danger';
+                barraModelo2.className = data.modelo2.prediccion === 'Perro' ? 
+                    'progress-bar bg-primary' : 'progress-bar bg-danger';
+                
+                // Mostrar imagen capturada permanentemente
                 const imagenCapturada = document.getElementById('imagenCapturada');
-                imagenCapturada.src = 'data:image/jpeg;base64,' + data.image;
+                imagenCapturada.src = 'data:image/jpeg;base64,' + data.imagen;
                 imagenCapturada.style.display = 'block';
             })
             .catch(error => {
@@ -289,73 +243,7 @@
             })
             .finally(() => {
                 this.disabled = false;
-                this.innerHTML = 'Capturar y Analizar Rostro';
-            });
-        });
-
-        // Botón de registro
-        document.getElementById('botonRegistrar').addEventListener('click', function() {
-            document.getElementById('seccionRegistro').style.display = 'flex';
-            document.getElementById('seccionResultados').style.display = 'none';
-            
-            // Capturar imagen para registro
-            fetch('/capture_for_register', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Error: ' + data.error);
-                    return;
-                }
-                
-                // Mostrar imagen capturada
-                const imagenCapturada = document.getElementById('imagenCapturada');
-                imagenCapturada.src = 'data:image/jpeg;base64,' + data.image;
-                imagenCapturada.style.display = 'block';
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Ocurrió un error al capturar la imagen');
-            });
-        });
-
-        // Cancelar registro
-        document.getElementById('cancelarRegistro').addEventListener('click', function() {
-            document.getElementById('seccionRegistro').style.display = 'none';
-            document.getElementById('registrationForm').reset();
-        });
-
-        // Formulario de registro
-        document.getElementById('registrationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const nombre = document.getElementById('nombrePersona').value;
-            const info = document.getElementById('informacionAdicional').value;
-            
-            fetch('/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: nombre,
-                    additional_info: info
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Persona registrada exitosamente');
-                    document.getElementById('seccionRegistro').style.display = 'none';
-                    document.getElementById('registrationForm').reset();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Ocurrió un error al registrar la persona');
+                this.innerHTML = 'Capturar y Analizar';
             });
         });
     </script>

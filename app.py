@@ -1,18 +1,71 @@
-from flask import Flask, render_template, Response, request, jsonify
+from flask import Flask, render_template, Response, jsonify
 import cv2
 import numpy as np
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from PIL import Image
 import base64
-from face_utils import face_system
+import os
 
 app = Flask(__name__)
 
-# Initialize camera
-camera = cv2.VideoCapture(0)
+# Carga de modelos
+try:
+    modelo1 = load_model('static/models/cnn.h5')
+    print("Modelo 1 cargado exitosamente")
+except Exception as e:
+    print(f"Error cargando modelo cnn: {e}")
+    modelo1 = None
 
-def gen_frames():
+try:
+    modelo2 = load_model('static/models/normal.h5')
+    print("Modelo 2 cargado exitosamente")
+except Exception as e:
+    print(f"Error cargando modelo normal: {e}")
+    modelo2 = None
+
+# Configuración de cámara
+camara = cv2.VideoCapture(0)
+
+def preprocesar_imagen(img):
+    """Convertir imágenes a escala de grises: (100,100,1)"""
+    img = Image.fromarray(img).convert('L')
+    img = img.resize((100, 100))
+    img_array = image.img_to_array(img)
+    img_array = img_array / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array = np.expand_dims(img_array, axis=-1)
+    return img_array
+
+def predecir_imagen(img_array, modelo):
+    """Generar predicciones del modelo especificado"""
+    if modelo is None:
+        return ('Modelo no cargado', 0.5)
+    
+    try:
+        predicciones = modelo.predict(img_array)
+        
+        if predicciones.shape[-1] == 1:
+            if predicciones[0][0] > 0.5:
+                return ('Perro', float(predicciones[0][0]))
+            else:
+                return ('Gato', 1 - float(predicciones[0][0]))
+        elif predicciones.shape[-1] == 2:
+            if predicciones[0][0] > predicciones[0][1]:
+                return ('Gato', float(predicciones[0][0]))
+            else:
+                return ('Perro', float(predicciones[0][1]))
+        else:
+            return ('Salida inesperada', 0.5)
+    except Exception as e:
+        print(f"Error de predicción: {e}")
+        return ('Error de predicción', 0.5)
+
+def generar_frames():
+    """Generar frames de la cámara"""
     while True:
-        success, frame = camera.read()
-        if not success:
+        exito, frame = camara.read()
+        if not exito:
             break
         else:
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -21,133 +74,56 @@ def gen_frames():
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 @app.route('/')
-def index():
-    if not face_system or face_system.model is None:
-        return render_template('index.html', error="Model failed to load")
-    return render_template('index.html')
+def inicio():
+    """Página principal con transmisión de video"""
+    # Imágenes de la universidad
+    imagenes_universidad = [
+        {'path': 'static/images/unison.png', 'caption': 'Logo Universidad'},
+        {'path': 'static/images/mcd.png', 'caption': 'Maestría Ciencia de Datos'}
+    ]
+    return render_template('index.html', imagenes_universidad=imagenes_universidad)
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen_frames(), 
-                   mimetype='multipart/x-mixed-replace; boundary=frame')
+    """Ruta de transmisión de video"""
+    return Response(generar_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/capture_for_register', methods=['POST'])
-def capture_for_register():
-    if face_system is None:
-        return jsonify({"error": "Model not loaded"}), 500
-        
-    success, frame = camera.read()
-    if not success:
-        return jsonify({"error": "Failed to capture image"}), 500
-    
-    _, buffer = cv2.imencode('.jpg', frame)
-    encoded_image = base64.b64encode(buffer).decode('utf-8')
-    
-    return jsonify({
-        "image": encoded_image
-    })
-
-@app.route('/recognize', methods=['POST'])
-def recognize():
-    if not face_system or not face_system.model:
-        return jsonify({"error": "Model not loaded"}), 500
-        
-    success, frame = camera.read()
-    if not success:
-        return jsonify({"error": "Failed to capture image"}), 500
-    
-    # Process the image
-    recognized, name, confidence, additional_info = face_system.recognize_face(frame)
-    
-    # Encode the image
-    _, buffer = cv2.imencode('.jpg', frame)
-    encoded_image = base64.b64encode(buffer).decode('utf-8')
-    
-    if recognized:
-        return jsonify({
-            "recognized": True,
-            "name": name,
-            "confidence": confidence,
-            "additional_info": additional_info,
-            "image": encoded_image
-        })
-    else:
-        return jsonify({
-            "recognized": False,
-            "image": encoded_image
-        })
-    
-@app.route('/register', methods=['POST'])
-def register():
-    if face_system is None:
-        return jsonify({"error": "Model not loaded"}), 500
-        
-    data = request.json
-    name = data.get('name')
-    additional_info = data.get('additional_info', '')
-    
-    if not name:
-        return jsonify({"error": "Name is required"}), 400
-    
-    # Capture current frame
-    success, frame = camera.read()
-    if not success:
-        return jsonify({"error": "Failed to capture image"}), 500
-    
-    # Register the face
-    success, message = face_system.register_new_face(frame, name, additional_info)
-    
-    if success:
-        return jsonify({
-            "success": True,
-            "message": message
-        })
-    else:
-        return jsonify({
-            "error": message
-        }), 400
-
-@app.route('/test_pipeline')
-def test_pipeline():
-    if not face_system or not face_system.model:
-        return jsonify({"status": "error", "message": "Model not loaded"}), 500
+@app.route('/capturar', methods=['POST'])
+def capturar():
+    """Capturar imagen y generar predicciones"""
+    exito, frame = camara.read()
+    if not exito:
+        return jsonify({'error': 'Error al capturar imagen'}), 400
     
     try:
-        # Create test image
-        test_img = np.random.rand(480, 640, 3) * 255
-        test_img = test_img.astype('uint8')
+        img_array = preprocesar_imagen(frame)
         
-        # Test registration
-        reg_status, reg_msg = face_system.register_new_face(test_img, "Test User", "Test Info")
-        if not reg_status:
-            return jsonify({"status": "error", "message": f"Registration failed: {reg_msg}"}), 500
+        # Predicciones
+        pred_modelo1, conf_modelo1 = predecir_imagen(img_array, modelo1)
+        pred_modelo2, conf_modelo2 = predecir_imagen(img_array, modelo2)
         
-        # Test recognition
-        recognized, name, confidence, _ = face_system.recognize_face(test_img)
+        # Convertir imagen a base64
+        _, img_codificada = cv2.imencode('.jpg', frame)
+        img_bytes = img_codificada.tobytes()
+        img_base64 = base64.b64encode(img_bytes).decode('utf-8')
         
         return jsonify({
-            "status": "success",
-            "registration": "success",
-            "recognition": {
-                "recognized": recognized,
-                "name": name,
-                "confidence": confidence
+            'imagen': img_base64,
+            'modelo1': {
+                'prediccion': pred_modelo1,
+                'confianza': round(conf_modelo1 * 100, 2),
+                'resultado': pred_modelo1  
+            },
+            'modelo2': {
+                'prediccion': pred_modelo2,
+                'confianza': round(conf_modelo2 * 100, 2),
+                'resultado': pred_modelo2  
             }
         })
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
-@app.route('/check_faces')
-def check_faces():
-    if not face_system:
-        return jsonify({"error": "System not loaded"}), 500
-        
-    return jsonify({
-        "loaded_faces": face_system.known_face_names,
-        "count": len(face_system.known_face_encodings)
-    })
+        print(f"Error en captura: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    app.run(debug=True)
